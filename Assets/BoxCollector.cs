@@ -7,6 +7,9 @@ public class BoxCollector : MonoBehaviour
 {
     [SerializeField] private string boxTag = "Box";
     [SerializeField] private int maxCapacity = 10;
+    [SerializeField] private float pickupRadius = 2f;
+    [SerializeField] private Key pickupSingleKey = Key.F;
+    [SerializeField] private Key pickupAllKey = Key.R;
     [SerializeField] private Key dropKey = Key.E;
     [SerializeField] private Vector2 dropOffset = new Vector2(1.5f, 0f);
     [SerializeField] private TextMeshProUGUI counterText;
@@ -28,25 +31,69 @@ public class BoxCollector : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current != null && Keyboard.current[dropKey].wasPressedThisFrame)
+        if (Keyboard.current == null) return;
+
+        if (Keyboard.current[pickupSingleKey].wasPressedThisFrame)
+        {
+            CollectNearestBox();
+        }
+
+        if (Keyboard.current[pickupAllKey].wasPressedThisFrame)
+        {
+            CollectAllBoxesInRadius();
+        }
+
+        if (Keyboard.current[dropKey].wasPressedThisFrame)
         {
             DropLastBox();
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    private void CollectNearestBox()
     {
-        if (other.CompareTag(boxTag))
+        if (maxCapacity > 0 && inventory.Count >= maxCapacity)
         {
-            TryCollectBox(other.gameObject);
+            return;
+        }
+
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, pickupRadius);
+        GameObject nearestBox = null;
+        float minDistance = float.MaxValue;
+
+        foreach (Collider2D col in colliders)
+        {
+            if (col.CompareTag(boxTag) && col.gameObject.activeInHierarchy)
+            {
+                float distance = Vector2.Distance(transform.position, col.transform.position);
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    nearestBox = col.gameObject;
+                }
+            }
+        }
+
+        if (nearestBox != null)
+        {
+            TryCollectBox(nearestBox);
         }
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void CollectAllBoxesInRadius()
     {
-        if (collision.gameObject.CompareTag(boxTag))
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, pickupRadius);
+
+        foreach (Collider2D col in colliders)
         {
-            TryCollectBox(collision.gameObject);
+            if (maxCapacity > 0 && inventory.Count >= maxCapacity)
+            {
+                break;
+            }
+
+            if (col.CompareTag(boxTag) && col.gameObject.activeInHierarchy)
+            {
+                TryCollectBox(col.gameObject);
+            }
         }
     }
 
