@@ -4,16 +4,17 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody2D), typeof(BoxCollider2D))]
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float jumpForce = 14f;
 
     private Rigidbody2D rb;
     private float horizontalInput;
+    private Vector3 initialScale;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        initialScale = transform.localScale;
     }
 
     private void Update()
@@ -25,6 +26,8 @@ public class PlayerMovement : MonoBehaviour
             horizontalInput -= 1f;
         if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed)
             horizontalInput += 1f;
+
+        FlipCharacter();
 
         if (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.wKey.wasPressedThisFrame || Keyboard.current.upArrowKey.wasPressedThisFrame)
         {
@@ -40,5 +43,17 @@ public class PlayerMovement : MonoBehaviour
     private void FixedUpdate()
     {
         rb.linearVelocity = new Vector2(horizontalInput * moveSpeed, rb.linearVelocity.y);
+    }
+
+    private void FlipCharacter()
+    {
+        if (horizontalInput > 0f)
+        {
+            transform.localScale = new Vector3(Mathf.Abs(initialScale.x), initialScale.y, initialScale.z);
+        }
+        else if (horizontalInput < 0f)
+        {
+            transform.localScale = new Vector3(-Mathf.Abs(initialScale.x), initialScale.y, initialScale.z);
+        }
     }
 }
